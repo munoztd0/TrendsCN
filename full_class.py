@@ -18,17 +18,17 @@ from datetime import datetime
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.datasets import fetch_openml
-from sklearn.datasets import load_iris
 from keras import backend as K
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.regularizers import l2,l1
 from keras.utils import np_utils
 from keras import optimizers
-rm=optimizers.RMSprop(lr=0.001)
+#rm = optimizers.RMSprop(lr=0.001)
+ada = optimizers.Adadelta() #change to an adapatative lr
 
 
-def NN_classifier_cross_validated():
+def full_classifier_cross_validated():
     '''
     This function loads the first 500 MNIST
     data points, trains and tests a neural network
@@ -40,18 +40,6 @@ def NN_classifier_cross_validated():
     startTime=datetime.now()
 
     # Load data and check if data is already downloaded
-    # if os.path.exists('mnist_data10000.npy'):
-    #     x = np.load('mnist_data10000.npy',allow_pickle=True)[:500]
-    #     y1 = np.load('mnist_target10000.npy',allow_pickle=True)[:500]
-    # else:
-    #     print('loading MNIST ...')
-    #     mnist = fetch_openml("mnist_784", version=1)
-    #     np.save('mnist_data10000.npy', mnist.data[:10000])
-    #     np.save('mnist_target10000.npy', mnist.target[:10000])
-    #     x=mnist.data[:500]
-    #     y1=mnist.target.astype(int)[:500]
-
-            # Load data and check if data is already downloaded
     if os.path.exists('mnist_data.npy'):
         x = np.load('mnist_data.npy',allow_pickle=True)
         y1 = np.load('mnist_target.npy',allow_pickle=True)
@@ -62,22 +50,21 @@ def NN_classifier_cross_validated():
         np.save('mnist_target.npy', mnist.target)
         x=mnist.data
         y1=mnist.target.astype(int)
-
-
  
     y = np_utils.to_categorical(y1)
-
+    
     # Set 
-    nodes=35
-    #nodes1=35 #Maybe another layer?
-    EPOCHS=1 #Maybe train longer?
+    #nodes1=10 #
+    nodes2=35 #Bumbed from 35 to a 100
+    EPOCHS=12 #added 12 epochs
+    BATCH=20 #batch from 20 to 100
 
     # Preprocessing: Baseline-subtract, division by std
+    #should I improve preprocess?
     sc = StandardScaler() 
     x = sc.fit_transform(x) 
 
     input_dim=len(x[0]) 
-    print(input_dim)
     k=0
 
     train_errs=[]
@@ -98,19 +85,25 @@ def NN_classifier_cross_validated():
         train_y=y[train_index]
         test_y=y[test_index]
 
-        model = Sequential()   
-
-        model.add(Dense(nodes,activation='linear',input_shape=(input_dim,), kernel_regularizer=l2(0.01)))
-        #model.add(Dense(nodes1,activation='relu', kernel_regularizer=l2(0.01)))
-
+        model = Sequential() 
+        
+        #model.add(Dense(nodes1,activation='linear',input_shape=(input_dim,), kernel_regularizer=l2(0.01)))
+        #model.add(Dropout(0.25)) #avoid to much overfitting
+        #model.add(Dense(nodes2,activation='relu', kernel_regularizer=l2(0.01))) # add a reLu
+        
+        model.add(Dense(nodes2,activation='relu',input_shape=(input_dim,), kernel_regularizer=l2(0.01)))
+        #model.add(Dense(nodes2,activation='relu', kernel_regularizer=l2(0.01))) # add a reLu
+        #model.add(Dropout(0.5)) #avoid to much overfitting
         model.add(Dense(len(y[0]), input_dim=input_dim,activation='softmax',kernel_regularizer=l2(0.01)))
+        #final node
 
-        model.compile(optimizer=rm,loss='categorical_crossentropy') 
+        #model.compile(optimizer=rm,loss='categorical_crossentropy') 
+        model.compile(optimizer=ada,loss='categorical_crossentropy') 
         if k==0: print(model.summary())
         print('training and testing, split %s of %s' %(k,N_splits))
 
         # The weights are adjusted, using the training set of datapoints
-        model.fit(train_X, train_y, batch_size=20, epochs=EPOCHS, verbose=0)
+        model.fit(train_X, train_y, batch_size=BATCH, epochs=EPOCHS, verbose=0)
 
         # The unseen datapoints are classified by the trained network
         q=model.predict_on_batch(test_X)
@@ -156,3 +149,17 @@ def perf(y_true,y_predict):
     else:
         return 0
 
+#base                    Mean test accuracy: 0.76 +\- 0.04
+#full : epoch 10 and 2 nodes Mean test accuracy: 0.868 +\- 0.03
+#full : epoch 12 / 1 layers with 128 nodes / adadelta optim / 128 batch / Mean test accuracy: 0.9369 +\- 0.0
+#full : epoch 12 / 100 batch / 2 layers with 35 node (1 linea & 1 relu) + 2 dropout layers  
+#mean test accuracy: 0.9049 +\- 0.0
+# without droupout layer 0.9254
+#full : epoch 12 / 20 batch / 2 layers with a 15 linear node + a 35 relu node no droupout
+#Mean test accuracy: 0.923 +\- 0.0
+#full : epoch 12 / 20 batch / 2 layers with a 10 linear node + a 35 relu node no droupout
+#Mean test accuracy: 0.9191 +\- 0.0
+#full : epoch 12 / 20 batch / 1 layers with 35 relu nodes no droupout
+#Mean test accuracy: 0.9326 +\- 0.0
+#full : epoch 12 / 20 batch / 1 layers with 35 relu nodes WITH dropout
+#Mean test accuracy: 0.9158 +\- 0.0
