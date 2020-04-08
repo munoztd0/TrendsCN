@@ -15,7 +15,8 @@ import cma
 import seaborn as sns
 import time
 import os
-homedir = os.path.expanduser('~/Desktop/TrendsCN/tics-3/')
+#homedir = os.path.expanduser('~/Desktop/TrendsCN/tics-3/')
+homedir = os.path.dirname(os.path.realpath(__file__))
 
 df = pd.read_csv('./data/KS014_train.csv')              # Load .csv file into a pandas DataFrame
 
