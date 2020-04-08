@@ -17,6 +17,7 @@ import time
 import os
 #homedir = os.path.expanduser('~/Desktop/TrendsCN/tics-3/')
 homedir = os.path.dirname(os.path.realpath(__file__))
+homedir = homedir+'/'
 
 df = pd.read_csv('./data/KS014_train.csv')              # Load .csv file into a pandas DataFrame
 
@@ -336,36 +337,36 @@ pub = np.array([25,25,0.45,0.8,25,25,0.45,0.8])
 
 #with for loops
 
-TimeF_negLL =  []
+# TimeF_negLL =  []
 
-start_time = time.time()
+# start_time = time.time()
 
-for session_num in range(1,16): # loop over session data
+# for session_num in range(1,16): # loop over session data
 
-    df_session = df[df['session_num'] == session_num]
+#     df_session = df[df['session_num'] == session_num]
 
-    opt_fun = lambda theta_: -psychofun_timevarying_loglike(theta_,df_session)
+#     opt_fun = lambda theta_: -psychofun_timevarying_loglike(theta_,df_session)
 
-    theta0 = np.random.uniform(low=plb,high=pub)
-    opts = cma.CMAOptions()
-    opts.set("bounds",bounds)
-    opts.set("tolfun",1e-5)
-    res_time = cma.fmin(opt_fun, theta0, 0.5, opts)
+#     theta0 = np.random.uniform(low=plb,high=pub)
+#     opts = cma.CMAOptions()
+#     opts.set("bounds",bounds)
+#     opts.set("tolfun",1e-5)
+#     res_time = cma.fmin(opt_fun, theta0, 0.5, opts)
 
-    print('')
-    print('Session') 
-    print(session_num)
-    print('Returned parameter vector: ' + str(res_time[0]))
-    print('Negative log-likelihood at solution: ' + str(res_time[1]))
+#     print('')
+#     print('Session') 
+#     print(session_num)
+#     print('Returned parameter vector: ' + str(res_time[0]))
+#     print('Negative log-likelihood at solution: ' + str(res_time[1]))
     
-    TimeF_negLL.append(res_time[1])
+#     TimeF_negLL.append(res_time[1])
 
-    #fig = plt.figure(figsize=(9,4))
-    #ax = plot_psychometric_data(df_session,session_num)
-    #psychofun_plot(res[0],ax)
-    #plt.show()
+#     #fig = plt.figure(figsize=(9,4))
+#     #ax = plot_psychometric_data(df_session,session_num)
+#     #psychofun_plot(res[0],ax)
+#     #plt.show()
 
-print("--- %s seconds with for loops ---" % (time.time() - start_time))
+# print("--- %s seconds with for loops ---" % (time.time() - start_time))
 
 
 #vectorized
@@ -398,7 +399,7 @@ for session_num in range(1,16): # loop over session data
     #ax = plot_psychometric_data(df_session,session_num)
     #psychofun_plot(res[0],ax)
     #plt.show()
-print("--- %s seconds ---" % (time.time() - start_time))
+#print("--- %s seconds ---" % (time.time() - start_time))
 
 
 Nmodels = 3
@@ -456,3 +457,6 @@ plt.savefig(homedir+"AIC_BIC_time-varying.png")
 diff = np.asarray(deltaAIC_time) - np.asarray(deltaBIC_time)
 plot_sess_param(session, diff, '$\Delta$ Between ICs (AIC-BIC)')
 plt.savefig(homedir+"IC_diff_time.png")
+
+print("--- 30 seconds when vectorized ---" 
+print("--- 60 MINUTES with for loops !---" 
